@@ -3,459 +3,192 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎤 智能口语挑战 · 修复版</title>
+    <title>🎙️ 智能口语王 · 准度评分版</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
+        :root { --score-color: #ffde9e; }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            background: linear-gradient(145deg, #0b1c26 0%, #1a2f3a 100%);
+            background: radial-gradient(circle at center, #1a2f3a 0%, #0b1c26 100%);
             min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-family: 'Segoe UI', Roboto, sans-serif;
-            padding: 16px;
-            overflow: hidden;
+            display: flex; justify-content: center; align-items: center;
+            font-family: 'Segoe UI', system-ui, sans-serif; color: white;
         }
 
+        /* 启动遮罩 */
         #startOverlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(11, 28, 38, 0.95);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
-            color: #ffde9e;
+            position: fixed; inset: 0; background: rgba(11, 28, 38, 0.98);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            z-index: 100; text-align: center; padding: 20px;
         }
-
-        .start-big-btn {
-            background: #dd6b4b;
-            color: white;
-            border: none;
-            padding: 30px 60px;
-            border-radius: 100px;
-            font-size: 2.5rem;
-            font-weight: 800;
-            cursor: pointer;
-            box-shadow: 0 15px 30px rgba(0,0,0,0.5);
-            transition: transform 0.2s;
-            border-bottom: 8px solid #813e2b;
+        .start-btn {
+            background: #ffde9e; color: #0b1c26; border: none; padding: 25px 50px;
+            border-radius: 50px; font-size: 2rem; font-weight: 800; cursor: pointer;
+            box-shadow: 0 10px 30px rgba(255, 222, 158, 0.3); transition: 0.3s;
         }
-        .start-big-btn:active { transform: translateY(5px); border-bottom-width: 2px; }
+        .start-btn:hover { transform: scale(1.05); background: #fff; }
 
         .game-card {
-            max-width: 900px;
-            width: 100%;
-            background: rgba(12, 27, 35, 0.95);
-            border-radius: 60px;
-            padding: 40px;
-            box-shadow: 0 30px 40px rgba(0, 0, 0, 0.8);
-            border: 1px solid #3d6175;
-            position: relative;
+            width: 90%; max-width: 600px; background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px); border-radius: 40px; padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 40px 60px rgba(0,0,0,0.5);
         }
 
-        h1 { text-align: center; color: #ffde9e; font-size: 2.5rem; margin-bottom: 20px; text-shadow: 0 4px 10px black; }
-
-        .visual-card {
-            background: #12303e;
-            border-radius: 50px;
-            padding: 40px;
-            text-align: center;
-            border: 4px solid #6a9bb5;
-            transition: all 0.3s;
+        /* 分数环 */
+        .score-circle {
+            width: 120px; height: 120px; border-radius: 50%; border: 8px solid #12303e;
+            margin: 0 auto 20px; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; position: relative;
+            transition: 0.5s; border-top-color: var(--score-color);
         }
-        .visual-card.success-flash {
-            border-color: #4faa6a;
-            background: #1a3e2a;
-            transform: scale(1.02);
-        }
+        .score-val { font-size: 2.2rem; font-weight: 800; color: var(--score-color); }
+        .score-label { font-size: 0.8rem; color: #6a9bb5; }
 
-        .icon-area { font-size: 12rem; margin-bottom: 10px; }
-        .word-area {
-            font-size: 6rem;
-            font-weight: 800;
-            color: #fff1d2;
-            text-transform: uppercase;
-            letter-spacing: 5px;
+        .word-display {
+            text-align: center; margin: 20px 0; padding: 30px;
+            background: rgba(0,0,0,0.2); border-radius: 30px;
         }
+        #wordIcon { font-size: 6rem; margin-bottom: 10px; display: block; }
+        #currentWord { font-size: 4.5rem; font-weight: 900; letter-spacing: 3px; color: #fff; }
 
-        .stats-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin: 30px 0;
-            background: #0c2c3a;
-            padding: 20px 40px;
-            border-radius: 100px;
+        .mic-active {
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            color: #4faa6a; margin-bottom: 20px; font-size: 0.9rem;
+        }
+        .dot { width: 8px; height: 8px; background: #4faa6a; border-radius: 50%; animation: blink 1s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        .status-box {
+            height: 60px; text-align: center; color: #b4d6ea; font-size: 1.2rem;
+            display: flex; align-items: center; justify-content: center;
         }
 
-        .score-box { font-size: 2.5rem; color: #ffe39c; font-weight: bold; }
-        
-        .mic-status {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: #4faa6a;
-            font-weight: bold;
-            font-size: 1.2rem;
-        }
-        .pulse {
-            width: 15px;
-            height: 15px;
-            background: #4faa6a;
-            border-radius: 50%;
-            box-shadow: 0 0 0 rgba(79, 170, 106, 0.4);
-            animation: pulse 1.5s infinite;
-        }
-
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(79, 170, 106, 0.7); }
-            70% { box-shadow: 0 0 0 15px rgba(79, 170, 106, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(79, 170, 106, 0); }
-        }
-
-        .status-msg {
-            text-align: center;
-            font-size: 1.8rem;
-            color: #bed9ed;
-            min-height: 2.5rem;
-            margin-top: 20px;
-        }
-
-        .controls { display: flex; justify-content: center; gap: 20px; margin-top: 20px; }
-        button.ctrl-btn {
-            background: #315f75;
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            border-radius: 50px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        .hidden { display: none !important; }
-        .error-note {
-            color: #ff8a7a;
-            background: #3a1e1e;
-            border-radius: 20px;
-            padding: 8px 16px;
-            margin-top: 8px;
-            font-size: 1.2rem;
+        .success-flash { animation: successHit 0.5s ease-out; }
+        @keyframes successHit {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); background: rgba(79, 170, 106, 0.2); }
+            100% { transform: scale(1); }
         }
     </style>
 </head>
 <body>
 
     <div id="startOverlay">
-        <h1 style="margin-bottom: 40px;">智能口语自动挑战</h1>
-        <button class="start-big-btn" id="fullStartBtn">
-            <i class="fas fa-play"></i> 开启挑战
-        </button>
-        <p style="margin-top: 20px; color: #6a9bb5;">点击后将自动开启麦克风与节奏<br>请确保使用 https 或 localhost 并允许麦克风</p>
+        <h1>🎙️ 口语准度大挑战</h1>
+        <p style="margin-bottom: 30px; color: #6a9bb5;">请确保环境安静，并使用 HTTPS 访问</p>
+        <button class="start-btn" id="startBtn">开始挑战</button>
     </div>
 
     <div class="game-card">
-        <div class="mic-status" id="micStatus">
-            <div class="pulse"></div> 麦克风已就绪 (持续监听)
+        <div class="score-circle" id="scoreCircle">
+            <span class="score-val" id="lastScore">--</span>
+            <span class="score-label">准度得分</span>
         </div>
 
-        <div class="visual-card" id="mainCard">
-            <div class="icon-area" id="wordIcon">🐱</div>
-            <div class="word-area" id="currentWord">CAT</div>
+        <div class="mic-active" id="micIndicator">
+            <div class="dot"></div> 正在监听您的发音...
         </div>
 
-        <div class="stats-row">
-            <div class="score-box">
-                得分: <span id="scoreDisplay">0</span>
-            </div>
-            <div style="color: #ffde9e; font-size: 1.5rem;">
-                BPM: <input type="range" id="bpmSlider" min="40" max="180" value="80"> 
-                <span id="bpmValue">80</span>
-            </div>
+        <div class="word-display" id="mainDisplay">
+            <span id="wordIcon">🍎</span>
+            <span id="currentWord">APPLE</span>
         </div>
 
-        <div class="status-msg" id="statusMessage">请朗读单词...</div>
-        <div id="extraError" class="error-note hidden"></div>
-
-        <div class="controls">
-            <button class="ctrl-btn" id="resetBtn">🔄 重置进度</button>
-            <select id="topicSelect" style="padding: 10px; border-radius: 10px; background: #12303e; color: white;">
-                <option value="animals">🐾 动物</option>
-                <option value="food">🍎 食物</option>
-                <option value="actions">⚽ 动作</option>
-            </select>
+        <div class="status-box" id="statusMsg">准备好了吗？</div>
+        
+        <div style="text-align:center; color: #6a9bb5; font-size: 0.8rem; margin-top: 20px;">
+            系统识别到关键词将自动进入下一题
         </div>
     </div>
 
 <script>
-    (function() {
-        // ---------- 词库 ----------
-        const TOPIC_DATA = {
-            animals: [{w:'cat', i:'🐱'}, {w:'dog', i:'🐶'}, {w:'pig', i:'🐷'}, {w:'cow', i:'🐮'}, {w:'bee', i:'🐝'}, {w:'fox', i:'🦊'}],
-            food: [{w:'apple', i:'🍎'}, {w:'cake', i:'🍰'}, {w:'egg', i:'🥚'}, {w:'milk', i:'🥛'}, {w:'pizza', i:'🍕'}],
-            actions: [{w:'run', i:'🏃'}, {w:'jump', i:'🦘'}, {w:'dance', i:'💃'}, {w:'swim', i:'🏊'}]
+    const QUIZ = [
+        {w:'apple', i:'🍎'}, {w:'banana', i:'🍌'}, {w:'cake', i:'🍰'}, 
+        {w:'dog', i:'🐶'}, {w:'elephant', i:'🐘'}, {w:'fish', i:'🐟'}, 
+        {w:'guitar', i:'🎸'}, {w:'house', i:'🏠'}
+    ];
+
+    let index = 0;
+    let recognition;
+    let isRunning = false;
+
+    const lastScoreEl = document.getElementById('lastScore');
+    const wordEl = document.getElementById('currentWord');
+    const iconEl = document.getElementById('wordIcon');
+    const statusEl = document.getElementById('statusMsg');
+    const displayCard = document.getElementById('mainDisplay');
+
+    function initSpeech() {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            statusEl.textContent = "❌ 浏览器不支持语音识别";
+            return;
+        }
+
+        recognition = new SpeechRecognition();
+        recognition.lang = 'en-US';
+        recognition.continuous = false; // 采用单次识别后重启，更易控制
+        recognition.interimResults = false;
+
+        recognition.onresult = (event) => {
+            const resultObj = event.results[0][0];
+            const transcript = resultObj.transcript.toLowerCase().trim();
+            const confidence = resultObj.confidence; // 0 到 1 之间的数值
+            
+            // 将置信度映射为分数 (通常 API 返回的 confidence 在 0.8 以上就很清晰了)
+            // 我们做一个简单的算法：(confidence * 100) 并根据结果微调
+            let score = Math.round(confidence * 100);
+            if (score > 95) score = 100; // 给个及格鼓励
+
+            const target = QUIZ[index].w.toLowerCase();
+            
+            if (transcript.includes(target)) {
+                handleMatch(score, transcript);
+            } else {
+                statusEl.innerHTML = `听到: "${transcript}" (不匹配)`;
+            }
         };
 
-        // ---------- 状态变量 ----------
-        let words = [], icons = [], currentIndex = 0, score = 0;
-        let bpm = 80, beatTimer = null;
-        let recognition = null;
-        let keepListening = false;          // 是否持续重启识别
-        let processingSuccess = false;      // 防止重复加分
-        let restartTimeout = null;           // 用于延迟重启
+        // 核心：自动重启监听
+        recognition.onend = () => { if (isRunning) recognition.start(); };
+        recognition.onerror = (e) => { console.log('Speech Error:', e.error); };
+    }
 
-        // DOM 元素
-        const currentWordEl = document.getElementById('currentWord');
-        const wordIconEl = document.getElementById('wordIcon');
-        const scoreEl = document.getElementById('scoreDisplay');
-        const statusEl = document.getElementById('statusMessage');
-        const mainCard = document.getElementById('mainCard');
-        const extraError = document.getElementById('extraError');
-        const topicSelect = document.getElementById('topicSelect');
-        const bpmSlider = document.getElementById('bpmSlider');
-        const bpmValue = document.getElementById('bpmValue');
-        const resetBtn = document.getElementById('resetBtn');
-        const fullStartBtn = document.getElementById('fullStartBtn');
-        const startOverlay = document.getElementById('startOverlay');
+    function handleMatch(score, heard) {
+        lastScoreEl.textContent = score;
+        statusEl.innerHTML = `✅ 识别正确: "<b>${heard}</b>"`;
+        displayCard.classList.add('success-flash');
 
-        // ---------- 辅助函数 ----------
-        function loadTopic(topic) {
-            const data = TOPIC_DATA[topic] || TOPIC_DATA.animals;
-            words = data.map(item => item.w);
-            icons = data.map(item => item.i);
-            currentIndex = 0;     // 切换主题从头开始
-            updateDisplay();
-        }
+        // 颜色反馈：分数越高越亮
+        const hue = Math.min(score, 100); 
+        document.documentElement.style.setProperty('--score-color', `hsl(${hue}, 70%, 70%)`);
 
-        function updateDisplay() {
-            if (words.length > 0) {
-                currentWordEl.textContent = words[currentIndex].toUpperCase();
-                wordIconEl.textContent = icons[currentIndex];
-            }
-        }
+        // 停止监听一小会儿，准备下一题
+        isRunning = false;
+        recognition.stop();
 
-        function stopBeat() {
-            if (beatTimer) {
-                clearInterval(beatTimer);
-                beatTimer = null;
-            }
-        }
+        setTimeout(() => {
+            displayCard.classList.remove('success-flash');
+            index = (index + 1) % QUIZ.length;
+            updateUI();
+            isRunning = true;
+            recognition.start();
+            statusEl.textContent = "请朗读下一个单词";
+        }, 1200);
+    }
 
-        function startBeat() {
-            stopBeat();
-            if (!words.length) return;
-            const intervalMs = (60000 / bpm) * 2;  // 两个节拍换一次词
-            beatTimer = setInterval(() => {
-                // 只有不在“成功动画处理中”才自动跳词，避免干扰
-                if (!processingSuccess) {
-                    nextWord();
-                    statusEl.textContent = "⏩ 时间到，下一个！";
-                }
-            }, intervalMs);
-        }
+    function updateUI() {
+        wordEl.textContent = QUIZ[index].w.toUpperCase();
+        iconEl.textContent = QUIZ[index].i;
+    }
 
-        function nextWord() {
-            if (words.length) {
-                currentIndex = (currentIndex + 1) % words.length;
-                updateDisplay();
-            }
-        }
-
-        // 成功朗读处理 (带防重复锁)
-        function handleSuccess() {
-            if (processingSuccess) return;  // 正在处理中，忽略新的识别结果
-            processingSuccess = true;
-
-            // 加分、更新UI
-            score++;
-            scoreEl.textContent = score;
-            statusEl.innerHTML = `<span style="color: #4faa6a;">✅ 太棒了！ +1</span>`;
-            mainCard.classList.add('success-flash');
-
-            // 停止节拍器，避免中途跳词
-            stopBeat();
-
-            // 延迟后进入下一个单词，恢复节拍，解锁
-            setTimeout(() => {
-                mainCard.classList.remove('success-flash');
-                nextWord();
-                startBeat();          // 重新启动节拍
-                processingSuccess = false;  // 解锁
-                statusEl.textContent = "👂 继续朗读...";
-            }, 700); // 稍微延长，看清反馈
-        }
-
-        // ---------- 语音识别初始化 ----------
-        function initSpeech() {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechRecognition) {
-                extraError.classList.remove('hidden');
-                extraError.innerText = '❌ 您的浏览器不支持语音识别。请使用 Chrome / Edge。';
-                return null;
-            }
-
-            const recog = new SpeechRecognition();
-            recog.lang = 'en-US';
-            recog.continuous = false;       // 每个短语后自动结束，我们用 onend 重启，更精准
-            recog.interimResults = false;    // 只需要最终结果
-            recog.maxAlternatives = 1;       // 提高准确率
-
-            recog.onstart = () => {
-                extraError.classList.add('hidden'); // 隐藏错误
-                statusEl.textContent = '🎤 麦克风已开启，请朗读...';
-            };
-
-            recog.onresult = (event) => {
-                if (processingSuccess) return; // 锁住时忽略新结果
-                if (!words.length) return;
-
-                const rawResult = event.results[0][0].transcript;
-                // 清理标点、多余空格、转小写
-                const result = rawResult.toLowerCase().replace(/[.,!?;:'"\-]/g, '').trim();
-                const target = words[currentIndex].toLowerCase();  // 当前单词
-
-                statusEl.innerHTML = `听到: "<b>${result}</b>"`;
-
-                // 宽松匹配：全等 或 包含目标词 (避免说 "a cat" 不识别)
-                if (result === target || result.includes(target)) {
-                    handleSuccess();
-                } else {
-                    // 可提示错误，但不打断流程
-                    statusEl.innerHTML = `👂 听到 "${result}"，再试试 "${target}"`;
-                }
-            };
-
-            recog.onerror = (err) => {
-                console.warn('识别错误:', err.error);
-                // 显示具体错误，便于调试
-                extraError.classList.remove('hidden');
-                extraError.innerText = `⚠️ 麦克风错误: ${err.error} (若为 not-allowed，请允许权限后刷新重试)`;
-
-                // 遇到致命错误（如 not-allowed）不再盲目重启
-                if (err.error === 'not-allowed') {
-                    keepListening = false;
-                    statusEl.textContent = '❌ 麦克风权限被拒绝';
-                    return;
-                }
-                // 其他错误（如网络）可以尝试恢复
-            };
-
-            recog.onend = () => {
-                // 如果还在保持监听状态，则重启识别（带短延迟，避免高频冲突）
-                if (keepListening) {
-                    if (restartTimeout) clearTimeout(restartTimeout);
-                    restartTimeout = setTimeout(() => {
-                        if (keepListening) {
-                            try {
-                                recog.start();
-                            } catch (e) {
-                                console.warn('重启失败', e);
-                            }
-                        }
-                    }, 200);
-                }
-            };
-
-            return recog;
-        }
-
-        // ---------- 启动所有挑战 ----------
-        function startChallenge() {
-            // 隐藏遮罩
-            startOverlay.classList.add('hidden');
-
-            // 加载当前主题词库
-            const topic = topicSelect.value;
-            loadTopic(topic);
-
-            // 初始化语音识别（如果还没有）
-            if (!recognition) {
-                recognition = initSpeech();
-                if (!recognition) return;  // 浏览器不支持
-            }
-
-            // 开启持续监听标记
-            keepListening = true;
-
-            // 确保之前没有正在运行的识别，然后开始
-            try {
-                recognition.start();
-            } catch (e) {
-                // 如果已经开始，则忽略
-                console.log('start exception (可能已在运行):', e);
-            }
-
-            // 启动节拍
-            startBeat();
-
-            // 更新状态
-            statusEl.textContent = '🎤 已启动，请朗读单词...';
-        }
-
-        // ---------- 重置进度 ----------
-        function resetProgress() {
-            score = 0;
-            scoreEl.textContent = '0';
-            currentIndex = 0;
-            updateDisplay();
-            statusEl.textContent = '🔄 进度已重置';
-            // 不需要重置识别，继续监听即可
-        }
-
-        // ---------- 切换主题 ----------
-        function onTopicChange() {
-            if (!words.length) return;  // 还未启动，仅预加载
-
-            const newTopic = topicSelect.value;
-            loadTopic(newTopic);
-            // 可选重置分数（根据习惯，一般切换主题分数归零更合理）
-            score = 0;
-            scoreEl.textContent = '0';
-            statusEl.textContent = `📚 主题已切换，开始朗读吧`;
-            // 节奏继续，不需要重启识别
-        }
-
-        // ---------- 事件绑定 ----------
-        fullStartBtn.addEventListener('click', startChallenge);
-
-        bpmSlider.addEventListener('input', (e) => {
-            bpm = parseInt(e.target.value, 10);
-            bpmValue.textContent = bpm;
-            if (keepListening) {  // 只有在挑战进行中才动态调整节拍
-                startBeat();
-            }
-        });
-
-        resetBtn.addEventListener('click', resetProgress);
-
-        topicSelect.addEventListener('change', onTopicChange);
-
-        // 可选：防止在游戏未开始时切换主题导致错误 (但无大碍)
-        // 也可以预先加载默认词库以便主题切换预览
-        (function preloadDefault() {
-            // 只是为了显示默认动物
-            const defaultTopic = 'animals';
-            words = TOPIC_DATA[defaultTopic].map(item => item.w);
-            icons = TOPIC_DATA[defaultTopic].map(item => item.i);
-            currentIndex = 0;
-            updateDisplay();
-        })();
-
-        // 清理资源 (页面关闭时)
-        window.addEventListener('beforeunload', () => {
-            if (recognition && keepListening) {
-                keepListening = false;
-                try { recognition.stop(); } catch (e) {}
-            }
-            if (restartTimeout) clearTimeout(restartTimeout);
-            stopBeat();
-        });
-
-        // 额外说明：如果长时间没触发，可能是权限或浏览器限制，引导用户
-        // 增加手动刷新提示
-    })();
+    document.getElementById('startBtn').addEventListener('click', () => {
+        document.getElementById('startOverlay').style.display = 'none';
+        initSpeech();
+        isRunning = true;
+        recognition.start();
+        updateUI();
+    });
 </script>
 </body>
 </html>
