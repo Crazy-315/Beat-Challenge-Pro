@@ -3,675 +3,307 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎤 智能口语挑战 · 看图读音 · 积分版</title>
-    <!-- Font Awesome 6 图标库 (用于丰富图片表现) -->
+    <title>🎤 智能口语挑战 · 极速版</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             background: linear-gradient(145deg, #0b1c26 0%, #1a2f3a 100%);
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-family: 'Segoe UI', 'Poppins', Roboto, sans-serif;
+            font-family: 'Segoe UI', Roboto, sans-serif;
             padding: 16px;
+            overflow: hidden;
         }
+
+        /* 初始启动遮罩 */
+        #startOverlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(11, 28, 38, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            color: #ffde9e;
+        }
+
+        .start-big-btn {
+            background: #dd6b4b;
+            color: white;
+            border: none;
+            padding: 30px 60px;
+            border-radius: 100px;
+            font-size: 2.5rem;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.5);
+            transition: transform 0.2s;
+            border-bottom: 8px solid #813e2b;
+        }
+        .start-big-btn:active { transform: translateY(5px); border-bottom-width: 2px; }
 
         .game-card {
-            max-width: 950px;
+            max-width: 900px;
             width: 100%;
             background: rgba(12, 27, 35, 0.95);
-            backdrop-filter: blur(5px);
             border-radius: 60px;
-            padding: 32px 28px 38px;
-            box-shadow: 0 30px 40px rgba(0, 0, 0, 0.8), inset 0 0 0 1px rgba(255, 215, 140, 0.2);
+            padding: 40px;
+            box-shadow: 0 30px 40px rgba(0, 0, 0, 0.8);
             border: 1px solid #3d6175;
+            position: relative;
         }
 
-        h1 {
-            text-align: center;
-            font-weight: 800;
-            font-size: 2.8rem;
-            letter-spacing: 2px;
-            color: #ffde9e;
-            text-shadow: 0 4px 0 #8f6f3a, 0 8px 15px black;
-            margin-top: -10px;
-            margin-bottom: 8px;
-        }
+        h1 { text-align: center; color: #ffde9e; font-size: 2.5rem; margin-bottom: 20px; text-shadow: 0 4px 10px black; }
 
-        .sub {
-            text-align: center;
-            color: #b4d6ea;
-            background: #1b3b4b;
-            padding: 8px 32px;
-            border-radius: 60px;
-            width: fit-content;
-            margin: 0 auto 25px;
-            font-size: 1.2rem;
-            border: 1px solid #578aa3;
-        }
-
-        /* 主卡片：图片 + 单词 */
         .visual-card {
             background: #12303e;
-            border-radius: 60px;
-            padding: 30px 20px 20px;
-            margin-bottom: 20px;
-            border: 3px solid #6a9bb5;
-            box-shadow: inset 0 -5px 0 #0b202b, 0 20px 30px #00000070;
-        }
-
-        .icon-area {
-            font-size: 10rem;
+            border-radius: 50px;
+            padding: 40px;
             text-align: center;
-            line-height: 1.2;
-            color: #fbe4b6;
-            text-shadow: 0 6px 0 #8b6d40, 0 10px 20px black;
-            min-height: 160px;
+            border: 4px solid #6a9bb5;
+            transition: all 0.3s;
+        }
+        /* 读对时的闪烁效果 */
+        .visual-card.success-flash {
+            border-color: #4faa6a;
+            background: #1a3e2a;
+            transform: scale(1.02);
         }
 
+        .icon-area { font-size: 12rem; margin-bottom: 10px; }
         .word-area {
-            text-align: center;
-            font-size: 5rem;
-            font-weight: 700;
+            font-size: 6rem;
+            font-weight: 800;
             color: #fff1d2;
             text-transform: uppercase;
-            letter-spacing: 6px;
-            text-shadow: 0 4px 0 #946f36;
-            background: #1e4456;
-            border-radius: 50px;
-            padding: 10px 10px;
-            margin: 10px 20px 0;
-            border: 2px solid #ffcf8a;
+            letter-spacing: 5px;
         }
 
-        /* 下一词预览 */
-        .next-preview {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-            margin-top: 20px;
-            background: #0b2a36;
-            border-radius: 50px;
-            padding: 8px 25px;
-            width: fit-content;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        .next-preview i {
-            font-size: 2.8rem;
-            color: #ffcf8a;
-        }
-        .next-preview span {
-            font-size: 2.5rem;
-            font-weight: 500;
-            color: #cddde6;
-        }
-
-        /* 积分面板 + 节奏控制 */
         .stats-row {
             display: flex;
-            flex-wrap: wrap;
             justify-content: space-between;
             align-items: center;
+            margin: 30px 0;
             background: #0c2c3a;
-            border-radius: 60px;
-            padding: 15px 25px;
-            margin: 20px 0;
-            border: 1px solid #57869e;
+            padding: 20px 40px;
+            border-radius: 100px;
         }
 
-        .score-box {
-            background: #1e4557;
-            border-radius: 50px;
-            padding: 10px 30px;
-            font-size: 2.4rem;
-            font-weight: 700;
-            color: #ffe39c;
-            box-shadow: inset 0 2px 5px #08222b;
-        }
-        .score-box small {
+        .score-box { font-size: 2.5rem; color: #ffe39c; font-weight: bold; }
+        
+        /* 录音指示灯 */
+        .mic-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #4faa6a;
+            font-weight: bold;
             font-size: 1.2rem;
-            color: #bed9ed;
         }
-
-        .bpm-panel {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            background: #0c2c3a;
-            padding: 8px 20px;
-            border-radius: 40px;
-        }
-        .bpm-panel label {
-            color: #d5c088;
-            font-weight: 600;
-        }
-        #bpmSlider {
-            width: 160px;
-            height: 8px;
-            border-radius: 20px;
-            background: #30657c;
-            -webkit-appearance: none;
-        }
-        #bpmSlider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 25px;
-            height: 25px;
-            background: #fccd7c;
-            border-radius: 50%;
-            cursor: pointer;
-            border: 2px solid #fff0cc;
-        }
-        #bpmValue {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: #fedb9f;
-            min-width: 60px;
-        }
-
-        /* 录音按钮 + 控制 */
-        .voice-row {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 15px;
-            margin: 25px 0 15px;
-        }
-
-        .record-btn {
-            background: #dd6b4b;
-            border: none;
-            font-size: 2.2rem;
-            font-weight: 700;
-            padding: 20px 45px;
-            border-radius: 60px;
-            color: white;
-            border-bottom: 7px solid #813e2b;
-            transition: 0.08s;
-            cursor: pointer;
-            box-shadow: 0 10px 15px #00000060;
-            display: inline-flex;
-            align-items: center;
-            gap: 20px;
-            flex: 1 0 auto;
-            justify-content: center;
-        }
-        .record-btn:active {
-            transform: translateY(5px);
-            border-bottom-width: 2px;
-        }
-        .record-btn.listening {
+        .pulse {
+            width: 15px;
+            height: 15px;
             background: #4faa6a;
-            border-bottom-color: #1f6334;
+            border-radius: 50%;
+            box-shadow: 0 0 0 rgba(79, 170, 106, 0.4);
+            animation: pulse 1.5s infinite;
         }
 
-        .action-buttons {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        .action-buttons button {
-            background: #315f75;
-            border: none;
-            font-size: 1.8rem;
-            padding: 15px 25px;
-            border-radius: 50px;
-            color: white;
-            border-bottom: 5px solid #10333f;
-            cursor: pointer;
-            transition: 0.05s;
-            font-weight: 600;
-        }
-        .action-buttons button:active {
-            transform: translateY(4px);
-            border-bottom-width: 1px;
-        }
-
-        /* 词库选择 */
-        .selector-bar {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            justify-content: center;
-            margin: 20px 0;
-        }
-        .selector-bar select {
-            background: #1d4357;
-            color: white;
-            font-size: 1.4rem;
-            padding: 12px 30px;
-            border-radius: 50px;
-            border: 2px solid #70a5c2;
-            font-weight: 500;
-            min-width: 240px;
-        }
-        .selector-bar button {
-            background: #d89e54;
-            border: none;
-            font-size: 1.4rem;
-            padding: 12px 28px;
-            border-radius: 50px;
-            font-weight: 600;
-            border-bottom: 4px solid #8a5f2b;
-            cursor: pointer;
-        }
-
-        /* 最终报告模态框 */
-        .report-modal {
-            background: #03222e;
-            border-radius: 50px;
-            padding: 30px;
-            margin-top: 20px;
-            border: 3px solid #fcc46b;
-            text-align: center;
-        }
-        .report-modal h2 {
-            color: #ffde9e;
-            font-size: 3rem;
-        }
-        .report-modal p {
-            font-size: 2.5rem;
-            color: white;
-            background: #1d4a5e;
-            padding: 15px;
-            border-radius: 50px;
-        }
-
-        .hidden {
-            display: none;
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(79, 170, 106, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(79, 170, 106, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(79, 170, 106, 0); }
         }
 
         .status-msg {
-            color: #c6e2ff;
-            font-size: 1.4rem;
-            background: #173d4e;
-            padding: 6px 18px;
-            border-radius: 30px;
+            text-align: center;
+            font-size: 1.8rem;
+            color: #bed9ed;
+            min-height: 2.5rem;
+            margin-top: 20px;
         }
 
-        footer {
-            text-align: center;
-            color: #45768b;
-            margin-top: 25px;
+        .controls { display: flex; justify-content: center; gap: 20px; margin-top: 20px; }
+        button.ctrl-btn {
+            background: #315f75;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
         }
+
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
-<div class="game-card">
-    <h1>🎙️ BEAT & SPEAK</h1>
-    <div class="sub">👀 看图读音 · 积分挑战</div>
 
-    <!-- 图片 + 当前单词 -->
-    <div class="visual-card">
-        <div class="icon-area" id="wordIcon">🐱</div>
-        <div class="word-area" id="currentWord">cat</div>
-    </div>
-
-    <!-- 下一词预览 -->
-    <div class="next-preview">
-        <i class="fas fa-arrow-right"></i>
-        <span id="nextWord">fat</span>
-        <i id="nextIcon" class="fas fa-bacon"></i>
-    </div>
-
-    <!-- 积分 & 节奏 -->
-    <div class="stats-row">
-        <div class="score-box">
-            <span id="scoreDisplay">0</span> <small> / <span id="totalWords">8</span></small>
-        </div>
-        <div class="bpm-panel">
-            <label>⚡BPM</label>
-            <input type="range" id="bpmSlider" min="50" max="200" value="110" step="1">
-            <span id="bpmValue">110</span>
-        </div>
-    </div>
-
-    <!-- 录音 + 控制区 -->
-    <div class="voice-row">
-        <button class="record-btn" id="recordBtn">
-            <i class="fas fa-microphone"></i> 点击朗读
+    <div id="startOverlay">
+        <h1 style="margin-bottom: 40px;">智能口语自动挑战</h1>
+        <button class="start-big-btn" id="fullStartBtn">
+            <i class="fas fa-play"></i> 开启挑战
         </button>
-        <div class="action-buttons">
-            <button id="startBeatBtn">▶ 开始节拍</button>
-            <button id="pauseBeatBtn">⏸️ 暂停</button>
-            <button id="resetGameBtn">🔄 重置</button>
+        <p style="margin-top: 20px; color: #6a9bb5;">点击后将自动开启麦克风与节奏</p>
+    </div>
+
+    <div class="game-card">
+        <div class="mic-status" id="micStatus">
+            <div class="pulse"></div> 麦克风已就绪 (持续监听)
+        </div>
+
+        <div class="visual-card" id="mainCard">
+            <div class="icon-area" id="wordIcon">🐱</div>
+            <div class="word-area" id="currentWord">CAT</div>
+        </div>
+
+        <div class="stats-row">
+            <div class="score-box">
+                得分: <span id="scoreDisplay">0</span>
+            </div>
+            <div style="color: #ffde9e; font-size: 1.5rem;">
+                BPM: <input type="range" id="bpmSlider" min="40" max="180" value="80"> 
+                <span id="bpmValue">80</span>
+            </div>
+        </div>
+
+        <div class="status-msg" id="statusMessage">请朗读单词...</div>
+
+        <div class="controls">
+            <button class="ctrl-btn" id="resetBtn">🔄 重置进度</button>
+            <select id="topicSelect" style="padding: 10px; border-radius: 10px; background: #12303e; color: white;">
+                <option value="animals">🐾 动物</option>
+                <option value="food">🍎 食物</option>
+                <option value="actions">⚽ 动作</option>
+            </select>
         </div>
     </div>
-
-    <!-- 词库切换 -->
-    <div class="selector-bar">
-        <select id="topicSelect">
-            <option value="animals" selected>🐾 动物 (cat, dog, pig...)</option>
-            <option value="food">🍎 食物 (apple, cake, egg...)</option>
-            <option value="actions">⚽ 动作 (run, jump, dance...)</option>
-            <option value="objects">📚 物品 (book, pen, car...)</option>
-        </select>
-        <button id="applyTopicBtn">📋 加载词库</button>
-    </div>
-
-    <!-- 状态信息 / 提示 -->
-    <div class="status-msg" id="statusMessage">👋 准备好就开始吧</div>
-
-    <!-- 结束报告 (初始隐藏) -->
-    <div id="reportCard" class="report-modal hidden">
-        <h2>🎉 挑战完成</h2>
-        <p>✅ 正确读对 <span id="finalCorrect">0</span> / <span id="finalTotal">0</span> 个单词</p>
-        <button id="closeReportBtn" style="font-size:1.8rem; padding:10px 40px; margin-top:15px;">继续</button>
-    </div>
-
-    <footer>🎤 读出显示的单词 · 读对自动加分</footer>
-</div>
 
 <script>
-    (function() {
-        // ---------- 图文词库 (单词 + Font Awesome 图标 / emoji 备用) ----------
-        const TOPIC_DATA = {
-            animals: [
-                { word: 'cat', icon: '🐱' },
-                { word: 'dog', icon: '🐶' },
-                { word: 'pig', icon: '🐷' },
-                { word: 'cow', icon: '🐮' },
-                { word: 'bee', icon: '🐝' },
-                { word: 'fox', icon: '🦊' },
-                { word: 'frog', icon: '🐸' },
-                { word: 'duck', icon: '🦆' }
-            ],
-            food: [
-                { word: 'apple', icon: '🍎' },
-                { word: 'cake', icon: '🍰' },
-                { word: 'egg', icon: '🥚' },
-                { word: 'pizza', icon: '🍕' },
-                { word: 'banana', icon: '🍌' },
-                { word: 'carrot', icon: '🥕' },
-                { word: 'milk', icon: '🥛' },
-                { word: 'cookie', icon: '🍪' }
-            ],
-            actions: [
-                { word: 'run', icon: '🏃' },
-                { word: 'jump', icon: '🦘' },
-                { word: 'dance', icon: '💃' },
-                { word: 'sing', icon: '🎤' },
-                { word: 'swim', icon: '🏊' },
-                { word: 'sleep', icon: '😴' },
-                { word: 'eat', icon: '🍽️' },
-                { word: 'read', icon: '📖' }
-            ],
-            objects: [
-                { word: 'book', icon: '📘' },
-                { word: 'pen', icon: '✒️' },
-                { word: 'car', icon: '🚗' },
-                { word: 'ball', icon: '⚽' },
-                { word: 'chair', icon: '🪑' },
-                { word: 'phone', icon: '📱' },
-                { word: 'clock', icon: '🕰️' },
-                { word: 'key', icon: '🔑' }
-            ]
+    const TOPIC_DATA = {
+        animals: [{w:'cat', i:'🐱'}, {w:'dog', i:'🐶'}, {w:'pig', i:'🐷'}, {w:'cow', i:'🐮'}, {w:'bee', i:'🐝'}, {w:'fox', i:'🦊'}],
+        food: [{w:'apple', i:'🍎'}, {w:'cake', i:'🍰'}, {w:'egg', i:'🥚'}, {w:'milk', i:'🥛'}, {w:'pizza', i:'🍕'}],
+        actions: [{w:'run', i:'🏃'}, {w:'jump', i:'🦘'}, {w:'dance', i:'💃'}, {w:'swim', i:'🏊'}]
+    };
+
+    let words = [], icons = [], currentIndex = 0, score = 0;
+    let bpm = 80, beatTimer = null, isAutoPlaying = false;
+    let recognition = null;
+    let keepListening = false; // 控制是否持续循环监听
+
+    // DOM
+    const currentWordEl = document.getElementById('currentWord');
+    const wordIconEl = document.getElementById('wordIcon');
+    const scoreEl = document.getElementById('scoreDisplay');
+    const statusEl = document.getElementById('statusMessage');
+    const mainCard = document.getElementById('mainCard');
+
+    // 初始化语音识别
+    function initSpeech() {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            alert("抱歉，您的浏览器不支持语音识别。请使用 Chrome。");
+            return;
+        }
+        recognition = new SpeechRecognition();
+        recognition.lang = 'en-US';
+        recognition.interimResults = false;
+        recognition.continuous = false; // 我们通过onend手动循环，这样更稳定
+
+        recognition.onresult = (event) => {
+            const result = event.results[0][0].transcript.toLowerCase().replace(/[.,!?;:]/g, '').trim();
+            const target = words[currentIndex].toLowerCase();
+            
+            statusEl.innerHTML = `听到: "<b>${result}</b>"`;
+
+            if (result === target || result.includes(target)) {
+                handleSuccess();
+            }
         };
 
-        // ---------- 全局变量 ----------
-        let currentTopic = 'animals';
-        let wordsList = TOPIC_DATA.animals.map(item => item.word);           // 单词数组
-        let iconsList = TOPIC_DATA.animals.map(item => item.icon);           // 对应图标
-        let currentIndex = 0;
-        let correctCount = 0;          // 读对次数
-        let attemptedCount = 0;         // 已经尝试过的单词个数 (即已展示过多少个，用于总分)
-        let totalWords = wordsList.length;
+        recognition.onend = () => {
+            // 核心改进：只要还没结束，就立即重新开始监听
+            if (keepListening) recognition.start();
+        };
 
-        // 节拍相关
-        let bpm = 110;
-        let beatInterval = null;
-        let isBeatPlaying = false;
+        recognition.onerror = () => {
+            // 忽略错误，继续尝试监听
+            if (keepListening) setTimeout(() => recognition.start(), 100);
+        };
+    }
 
-        // 语音识别
-        let recognition = null;
-        let isListening = false;
-        let canScore = true;            // 防止同一单词多次加分 (单次朗读只加一次)
+    function handleSuccess() {
+        score++;
+        scoreEl.textContent = score;
+        statusEl.innerHTML = `<span style="color: #4faa6a;">✅ 太棒了！</span>`;
+        mainCard.classList.add('success-flash');
+        
+        // 读对了：重置节拍定时器，并在短暂延迟后跳转
+        stopBeat();
+        setTimeout(() => {
+            mainCard.classList.remove('success-flash');
+            nextWord();
+            startBeat(); // 重新开始计时节拍
+        }, 600);
+    }
 
-        // DOM 元素
-        const wordIcon = document.getElementById('wordIcon');
-        const currentWordSpan = document.getElementById('currentWord');
-        const nextWordSpan = document.getElementById('nextWord');
-        const nextIcon = document.getElementById('nextIcon');
-        const scoreDisplay = document.getElementById('scoreDisplay');
-        const totalWordsSpan = document.getElementById('totalWords');
-        const bpmSlider = document.getElementById('bpmSlider');
-        const bpmValue = document.getElementById('bpmValue');
-        const recordBtn = document.getElementById('recordBtn');
-        const startBeatBtn = document.getElementById('startBeatBtn');
-        const pauseBeatBtn = document.getElementById('pauseBeatBtn');
-        const resetGameBtn = document.getElementById('resetGameBtn');
-        const topicSelect = document.getElementById('topicSelect');
-        const applyTopicBtn = document.getElementById('applyTopicBtn');
-        const statusMsg = document.getElementById('statusMessage');
-        const reportCard = document.getElementById('reportCard');
-        const finalCorrectSpan = document.getElementById('finalCorrect');
-        const finalTotalSpan = document.getElementById('finalTotal');
-        const closeReportBtn = document.getElementById('closeReportBtn');
+    function nextWord() {
+        currentIndex = (currentIndex + 1) % words.length;
+        updateDisplay();
+    }
 
-        // ---------- 辅助函数 ----------
-        function updateDisplay() {
-            if (wordsList.length === 0) return;
-            // 当前
-            currentWordSpan.textContent = wordsList[currentIndex];
-            wordIcon.innerHTML = iconsList[currentIndex];
+    function updateDisplay() {
+        currentWordEl.textContent = words[currentIndex];
+        wordIconEl.textContent = icons[currentIndex];
+    }
 
-            // 下一个 (循环)
-            let nextIdx = (currentIndex + 1) % wordsList.length;
-            nextWordSpan.textContent = wordsList[nextIdx];
-            nextIcon.innerHTML = iconsList[nextIdx];
+    function startBeat() {
+        if (beatTimer) clearInterval(beatTimer);
+        beatTimer = setInterval(() => {
+            nextWord();
+            statusEl.textContent = "时间到，下一个！";
+        }, (60000 / bpm) * 2); // 设为2拍一个词，给用户留朗读时间
+    }
 
-            // 总分显示
-            totalWordsSpan.textContent = wordsList.length;
-        }
+    function stopBeat() {
+        clearInterval(beatTimer);
+    }
 
-        function updateScoreUI() {
-            scoreDisplay.textContent = correctCount;
-        }
-
-        // 重置本轮 (不清除总分，只重置索引/尝试次数/分数可选项)
-        function resetRound() {
-            currentIndex = 0;
-            correctCount = 0;
-            attemptedCount = 0;
-            canScore = true;
-            updateDisplay();
-            updateScoreUI();
-            hideReport();
-        }
-
-        // 加载新词库
-        function loadTopic(topicKey) {
-            const data = TOPIC_DATA[topicKey] || TOPIC_DATA.animals;
-            wordsList = data.map(item => item.word);
-            iconsList = data.map(item => item.icon);
-            totalWords = wordsList.length;
-            resetRound();      // 索引归零，分数归零
-            updateDisplay();
-            hideReport();
-        }
-
-        // 显示报告
-        function showReport() {
-            finalCorrectSpan.textContent = correctCount;
-            finalTotalSpan.textContent = wordsList.length;
-            reportCard.classList.remove('hidden');
-        }
-        function hideReport() {
-            reportCard.classList.add('hidden');
-        }
-
-        // 移动到下一个单词 (由节拍或手动触发)
-        function nextWord() {
-            if (wordsList.length === 0) return;
-            // 如果已经展示过，算attemptedCount (但不重复计数)
-            attemptedCount = Math.min(attemptedCount + 1, wordsList.length);
-            // 循环索引
-            currentIndex = (currentIndex + 1) % wordsList.length;
-            // 重置可加分标记 (新单词可被读)
-            canScore = true;
-            updateDisplay();
-
-            // 如果 attemptedCount >= totalWords 且 没有隐藏报告 且 没有全对也可显示结束(全读完)
-            if (attemptedCount >= totalWords && correctCount <= totalWords) {
-                // 一轮结束，显示报告 (但不要重复弹)
-                if (reportCard.classList.contains('hidden')) {
-                    showReport();
-                }
-                // 同时可以暂停节拍
-                if (isBeatPlaying) pauseBeat();
-            }
-        }
-
-        // ---------- 节拍控制 ----------
-        function startBeat() {
-            if (beatInterval) clearInterval(beatInterval);
-            const intervalMs = 60000 / bpm;
-            beatInterval = setInterval(() => {
-                nextWord();       // 每个节拍自动切单词
-            }, intervalMs);
-            isBeatPlaying = true;
-        }
-
-        function pauseBeat() {
-            if (beatInterval) {
-                clearInterval(beatInterval);
-                beatInterval = null;
-            }
-            isBeatPlaying = false;
-        }
-
-        function setBPM(value) {
-            bpm = value;
-            bpmValue.textContent = bpm;
-            if (isBeatPlaying) {
-                pauseBeat();
-                startBeat();
-            }
-        }
-
-        // ---------- 语音识别初始化 ----------
-        function initSpeech() {
-            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-                statusMsg.innerHTML = '⚠️ 您的浏览器不支持语音识别，请使用 Chrome/Edge 最新版。';
-                return false;
-            }
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            recognition = new SpeechRecognition();
-            recognition.continuous = false;       // 单次识别
-            recognition.interimResults = false;    // 只返回最终结果
-            recognition.lang = 'en-US';            // 英文识别
-
-            recognition.onstart = () => {
-                isListening = true;
-                recordBtn.classList.add('listening');
-                recordBtn.innerHTML = '<i class="fas fa-microphone-slash"></i> 聆听中...';
-                statusMsg.innerHTML = '🎤 请大声朗读单词';
-            };
-
-            recognition.onerror = (event) => {
-                console.warn('识别错误', event.error);
-                isListening = false;
-                recordBtn.classList.remove('listening');
-                recordBtn.innerHTML = '<i class="fas fa-microphone"></i> 点击朗读';
-                statusMsg.innerHTML = '❌ 识别失败，再试一次';
-                canScore = true;   // 这次不算，重新允许加分
-            };
-
-            recognition.onend = () => {
-                isListening = false;
-                recordBtn.classList.remove('listening');
-                recordBtn.innerHTML = '<i class="fas fa-microphone"></i> 点击朗读';
-            };
-
-            recognition.onresult = (event) => {
-                const last = event.results.length - 1;
-                if (last < 0) return;
-                const transcript = event.results[last][0].transcript.trim().toLowerCase();
-                statusMsg.innerHTML = `📝 识别: "${transcript}"`;
-
-                // 比对当前单词 (并且允许加分)
-                const targetWord = wordsList[currentIndex].toLowerCase();
-                // 简单判断：包含目标词或完全匹配(去除标点)
-                const cleanTranscript = transcript.replace(/[.,!?;:]$/, ''); // 移除末尾标点
-                if (canScore && (cleanTranscript === targetWord || transcript === targetWord)) {
-                    correctCount += 1;
-                    updateScoreUI();
-                    canScore = false;    // 同一单词只能加分一次
-                    statusMsg.innerHTML = '✅ 正确 +1 分！';
-                } else {
-                    if (canScore) statusMsg.innerHTML = '❌ 没读对，再试试';
-                }
-            };
-
-            return true;
-        }
-
-        // 开始录音
-        function startListening() {
-            if (!recognition) {
-                if (!initSpeech()) return;
-            }
-            if (isListening) {
-                recognition.stop();
-                return;
-            }
-            try {
-                recognition.start();
-            } catch (e) {
-                console.warn('多次快速启动可能会报错', e);
-                // 重新创建实例
-                initSpeech();
-                setTimeout(() => recognition.start(), 100);
-            }
-        }
-
-        // ---------- 事件绑定 ----------
-        bpmSlider.addEventListener('input', (e) => {
-            const val = parseInt(e.target.value);
-            setBPM(val);
-        });
-
-        startBeatBtn.addEventListener('click', () => {
-            if (!isBeatPlaying) startBeat();
-        });
-        pauseBeatBtn.addEventListener('click', pauseBeat);
-        resetGameBtn.addEventListener('click', () => {
-            pauseBeat();
-            resetRound();
-            hideReport();
-        });
-
-        applyTopicBtn.addEventListener('click', () => {
-            pauseBeat();
-            currentTopic = topicSelect.value;
-            loadTopic(currentTopic);
-        });
-
-        recordBtn.addEventListener('click', startListening);
-
-        // 关闭报告，可以继续下一轮（重置尝试计数，但保留分数？设计上重置本轮，也可以选择保留。按需：重置计数，但分数可累加？这里设定关闭报告后不清除得分，继续下一轮，累加正确数）
-        closeReportBtn.addEventListener('click', () => {
-            hideReport();
-            // 重置 attemptedCount 但不归零得分 (让总分可继续增加)
-            attemptedCount = 0;
-            currentIndex = 0;        // 回到词库开头
-            canScore = true;
-            updateDisplay();
-        });
-
-        // 初始化词库
-        loadTopic('animals');
-        setBPM(110);
+    // 整个流程的启动开关
+    document.getElementById('fullStartBtn').addEventListener('click', () => {
+        document.getElementById('startOverlay').classList.add('hidden');
+        
+        // 加载词库
+        const topic = document.getElementById('topicSelect').value;
+        words = TOPIC_DATA[topic].map(item => item.w);
+        icons = TOPIC_DATA[topic].map(item => item.i);
+        
+        // 启动逻辑
         initSpeech();
-    })();
+        keepListening = true;
+        recognition.start();
+        startBeat();
+        updateDisplay();
+    });
+
+    document.getElementById('bpmSlider').addEventListener('input', (e) => {
+        bpm = e.target.value;
+        document.getElementById('bpmValue').textContent = bpm;
+        startBeat();
+    });
+
+    document.getElementById('resetBtn').addEventListener('click', () => {
+        score = 0;
+        scoreEl.textContent = "0";
+        currentIndex = 0;
+        updateDisplay();
+        statusEl.textContent = "进度已重置";
+    });
+
 </script>
 </body>
 </html>
